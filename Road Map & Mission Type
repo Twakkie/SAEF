@@ -1,0 +1,65 @@
+/*==================================================================================================================*/
+////	INFO	////
+/*==================================================================================================================*/
+All missions types must be made that only a single marker is placed on the map and the whole scenario is developed from that point. All scripts must keep this in mind when being developed.
+
+
+
+/*==================================================================================================================*/
+////	Road Map	////
+/*==================================================================================================================*/
+- Develop Script for module "Sector Control". Allowing missions as Clear	& Capture Town, Contest Town & Sector   control to be used. *DONE*
+
+- Develop easy way to design a user defined building for special missions	and calling it up easily. *DONE*
+
+- Develop Script for spawning units in town and assaulting town with Town	marker as reference. 3 Types of units spawning. 1st being in town	patrolling and occupying buildings while second force assualts the town in question. 2nd 	is two forces assaulting the same neutral point/ town. 3de being spawning of selected units in a certain place for "special" missions.
+
+
+
+/*==================================================================================================================*/
+////	PLANNED MISSION TYPES	////
+/*==================================================================================================================*/
+Add any mission you would like to see in our mod
+
+/*------------------------------------------------------------------------------------------------------------------*/
+**** Assault Mission Types ****
+/*------------------------------------------------------------------------------------------------------------------*/
+
+Type: Clear and Capture Town
+Desc: Town is held by a force. It is up to the opposing force to assault the town and capture it. The objectives will 			be either be defend or of capture type depending on the side you are on. There are no specefic objectives other 			than 	to search & destroy. There can be reinforcement sent for both sides and simple secondary objectives.
+Size: Large Assault
+User: East & West
+
+
+Type: Contest For Town
+Desc: Town is neutral. Sides will contest for control of the area. The objectives will be capture & secure for both 				sides. The winning side will be the side that either eliminates all reinforcements or holds the town for a 						certain amount of time. Indi forces will have covert objectives such as secure intel/ammo etc in these sectors 				but wont directly contest for it.
+Size: Large Assault & Infiltration
+User: East, West & Indi
+
+
+Type: Sector Control
+Desc: Area will have multiple sectors to capture. One or more sectors will be in town while other might lie in 							different areas. The objective will be to capture and hold the most amount of sectors in a certain area within a 			certain amount of time.
+Size: Large Assault
+User: East & West
+
+
+Type: Assault Installation
+Desc: Assault an Military instillation of sorts. This instillation could be	user created or already on the map. 						Mission objective will be to kill everyone in the area.
+Size: Large Assualt
+User: East & West
+
+
+Type: Tank Assault
+Desc: Tanks are used to punch a hole in a defencive line. Maybe clear out	a occupied town etc. That is all.
+Size: Large Assault
+User: East & West
+
+
+/*------------------------------------------------------------------------------------------------------------------*/
+
+
+**** Defence Mission Types ****
+
+**Infiltrate Mission Types**
+
+**Commando/Resistant Mission Types**
