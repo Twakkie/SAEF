@@ -9,7 +9,7 @@ from that point. All scripts must keep this in mind when being developed.
 /*==================================================================================================================*/
 ////	Road Map	////
 /*==================================================================================================================*/
-- Develop Script for module "Sector Control". Allowing missions as Clear	& Capture Town, Contest Town & Sector   
+- Develop Script for module "Sector Control". Allowing missions as Clear & Capture Town, Contest Town & Sector   
   control to be used. *DONE*
 
 - Develop easy way to design a user defined building for special missions	and calling it up easily. *DONE*
