@@ -1,5 +1,0 @@
-//===================================================================================================================
-// This script is called to "grab" any zeus placed objects around the marker position. It is stored to the clipboard.
-//===================================================================================================================
-hint "Grabbing compilations";
-0 = [getMarkerPos "town_Gravia", 500] call BIS_fnc_objectsGrabber;
