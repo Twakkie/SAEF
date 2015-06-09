@@ -1,9 +1,15 @@
-//////////////////////////////////////////////////////////////////
-// Function file for Armed Assault
-// Created by: TODO: Author Name
-//////////////////////////////////////////////////////////////////
-
-
+//===================================================================================================================
+// If this script is called a number of groups can be spawned from a predefined unit list.
+// How to use: Execute this in an execution/init box of a item, through a trigger or in a script:
+//              null = [side,"spawnAreaMarker",groupArray,"anchorMarker",nrOfGroups] execVM "createAIGroup.sqf";
+// Variable Explination:
+//              side = is the side which must be spawned.EAST,WEST or INDIPENDENT. **Critical Variable**
+//              spawnAreaMarker = Marker where the units should be spawned. **Critical Variable**
+//              groupArray = array of units to spawned. **Optional**
+//              anchorMarker = place where the units must attack. **Optional**
+//              nrOfGroups = the amount of units that must be spawned at the spawn marker of the specefic side.** Optional, Default 10**
+//
+//===================================================================================================================
     
 [EAST,"opfSpawn_townGravia",_OpforGroups,"town_Gravia"] call _createSoldiers;
 [independent,"indSpawn_townGravia",_IndepGroups,"town_Gravia"] call _createSoldiers;
