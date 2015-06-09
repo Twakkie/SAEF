@@ -15,8 +15,8 @@ _side = _this select 0;                 // Gets the faction from the call array
 _markerName = _this select 1;           // Gets the marker where to spawn the units from the call array
 _grpArray = _this select 2;             // Selects the group type you want to spawn
 _townMarker = _this select 3;           // Select the town in which to spawn units
+_nrOfGroups = [_this,4,[],[[],objNull,""],5] call BIS_fnc_param;
 _amount = 0;                            // Counter to get the number of groups 
-
 
 //hint format ["Total groups in side %1: %2",_side ,_amount];
 //sleep 0.5;
