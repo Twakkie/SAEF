@@ -5,10 +5,24 @@
 //                      costTracked,costWater,costWheeled,designation,name,onOwnerChange,ownerLimit,
 //                      scoreReward,taskDescription,taskOwner,taskTitle] execVM "sectorModule.sqf";
 // Variable Explination:
-//              mrkPos = is the position of the marker where the sector must be spawned. **Critical Variable**
-//              trgSize = Size of the secor that should be spawned. **Optional, Default: 500**
-//              side1 & side 2 = is the sides that will contend for the sector. **Optional, Default: east**
-//              defaultOwner = is the default owner the sector. **Optional, String, Default: "-1"**
+//              mrkPos          = is the position of the marker where the sector must be spawned. **Critical Variable**
+//              trgSize         = Size of the secor that should be spawned. **Optional, Default: 500**
+//              side1 & side 2  = is the sides that will contend for the sector. **Optional, Default: east**
+//              defaultOwner    = is the default owner the sector. "-1"= None, "0"= West, "1" = East, "2"= Indi **Optional, String, Default: "-1"**
+//              costAir         = The cost for the side if an air unit is destroyed. **Optional, Default: "2"**
+//              costInfantry    = Cost per infantry unit killed for side. **Optional, Default: "1"**
+//              costPlayers     = Cost per player killed for side. **Optional, Default:"2"**
+//              costTracked     = Cost per tracked,ie tanks, unit killed. **Optional, Default:"4"**
+//              costWater       = Cost per water type unit killed. **Optional, Default:"0"**
+//              costWheeled     = Cost per wheeled unit, ie Light Armor, killed. **Optional, Default:"2"**
+//              designation     = Designation for the sector. **Optional, Default:"A"**
+//              name            = Name for the sector. **Optional, Default:"Alpha"**
+//              onOwnerChange   = Script/trigger to activate when ownership change. **Optional, Default:""**
+//              ownerLimit      = **Optional, Default:"0"**
+//              scoreReward     = **Optional, Default:"0"**
+//              taskDescription = Task description. **Optional, Default:"Capture Alpha by eliminating the enemies"**
+//              taskOwner       = To whom must the task be assigned. **Optional, Default:"3"**
+//              taskTitle       = Title of task. **Optional, Default:"Capture Alpha"**
 //
 //===================================================================================================================
 
@@ -16,7 +30,7 @@
 if !( isServer ) exitWith {}; 
 
 //Default setting,  which are optional
-_pos            = [_this,0,[],[[],objNull,""],3] call BIS_fnc_param;
+_pos            = _this select 0;
 _trgSize        = [_this,1,500,[[],objNull,""],2] call BIS_fnc_param;   //A size for the trigger 
 _side1          = [_this,2,east,[[],objNull,""],1] call BIS_fnc_param;
 _side2          = [_this,3,west,[[],objNull,""],1] call BIS_fnc_param;
