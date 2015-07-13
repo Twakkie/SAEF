@@ -1,0 +1,659 @@
+///////////////////////;
+//     AiLift.sqf    //;
+///////////////////////;
+// AiLift by AAmdahl //;
+///////////////////////;
+// www.Brigaden.org  //;
+///////////////////////;
+//;											   -----------------------------------------------------------------------------
+//;                                            ------------ONLY RUN ONE INSTANCE OF THE SCRIPT AT ANY TIME------------------
+//;											   -----------------------------------------------------------------------------
+//; 1 = Soldiers Ground
+//; 2 = Soldiers Parachute
+//; 3 = Vehicle / Ammobox Ground
+//; 4 = Vehicle / Ammobox Parachute
+//;
+//; 0 = No vehicle crew
+//; 1 = Vehicle crew
+//;
+//;------------------------------------------------------------------------------------//;
+//; Execute the script using this line and modify it to suit your settings
+//;------------------------------------------------------------------------------------//;
+//; ["helispawn1", "helidrop1", 3, 0, 1, "Box_East_AmmoVeh_F", 0] execVM "ailift.sqf";
+//;------------------------------------------------------------------------------------//;
+//;
+//; To run it from a trigger use this
+//;-------------------------------------------------------------------------------------------------------//;
+//; if (true) then {["helispawn1", "helidrop1", 3, 0, 1, "Box_East_AmmoVeh_F", 0] execVM "ailift.sqf"};
+//;-------------------------------------------------------------------------------------------------------//;
+//;
+//; Settings are divided by commas
+//; (1) First setting is spawnpoint in the form of a marker
+//; (2) Second setting is insertion point in the form of a marker
+//; (3) Third setting is type as seen above ( 1 = Soldiers Ground ||  2 = Soldiers Parachute || 3 = Vehicle Ground || 4 = Vehicle / Ammobox Parachute )
+//; (4) Fourth setting is the ammount of enemies to be dropped ( 0 - 8 )
+//; (5) Fifth setting is the side of the reinforcement ( 1 = Blufor || 2 = Opfor || 3 = Indedpendent )
+//; (6) Sixth setting is the type of vehicle to be dropped off ( put the object name in "" )
+//; (7) seventh setting toggles crew in the vehicle ( 1 = ON || 0 = OFF )
+//;
+//;
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////;
+//;								 ~~~HOW TO USE~~~																							   //;
+//;Place two markers in the editor, in this instance helispawn1 will be the spawnpoint														   //;
+//;The spawnpoint should be a open area so he heli can take off.																			   //;
+//;the other marker; helidrop1, is where the helicopter will insert the units																   //;																									
+//;You can change your settings as explained above.																							   //;
+//;Execute the script from wherever you want, can be either a trigger or from another script, or something else.							   //;
+//;To select which type of object/vehicle to be lifted, replace the sixth setting with the classname of the vehicle, put it INSIDE the ""      //;
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////;
+
+
+//////////////////////;
+//DO NOT EDIT BELOW //;
+//////////////////////;
+if (instance == 1) exitWith {
+	hint format["Only run one instance of AiLift at a time"];
+};
+instance = 1;
+private ["_spawn", "_drop", "_type", "_force", "_side", "_veh", "_crew"];
+
+
+_spawn 	= [_this,0,null,[[],objNull,""],1] call BIS_fnc_param;		// (1) First setting is spawnpoint in the form of a marker
+_drop 	= [_this,1,null,[[],objNull,""],1] call BIS_fnc_param;		// (2) Second setting is insertion point in the form of a marker
+_type 	= [_this,2,1,[[],objNull,""],1] call BIS_fnc_param;			// (3) Third setting is type as seen above ( 1 = Soldiers Ground ||  2 = Soldiers Parachute || 3 = Vehicle Ground || 4 = Vehicle / Ammobox Parachute )
+_force 	= [_this,3,8,[[],objNull,""],1] call BIS_fnc_param;			// (4) Fourth setting is the ammount of enemies to be dropped ( 0 - 8 )
+_side 	= [_this,4,west,[[],objNull,""],1] call BIS_fnc_param;		// (5) Fifth setting is the side of the reinforcement ( west || east || Indep )
+_veh 	= [_this,5,null,[[],objNull,""],1] call BIS_fnc_param;		// (6) Sixth setting is the type of vehicle to be dropped off ( put the object name in "" )
+_crew 	= [_this,6,null,[[],objNull,""],1] call BIS_fnc_param;		// (7) seventh setting toggles crew in the vehicle ( 1 = ON || 0 = OFF )
+
+_westHeli = "b_heli_Transport_01_F";
+_westPilot = "b_helicrew_F";
+_westCrew = "b_helicrew_F";
+_westUnit = "B_Soldier_F";
+_westPara = "B_soldier_PG_F";
+_eastHeli = "O_Heli_Light_02_unarmed_F";
+_inepHeli = "I_Heli_Transport_02_F";
+
+ammount = 0;
+dropzoneact = 0;
+speed1 = velocity dropheli1;
+dropland1 = "Land_HelipadEmpty_F" createVehicle (getmarkerpos _drop);
+
+
+
+if (_side == west) then {   //SPAWN BLUFOR//;
+		_heli 	= _westHeli;
+		_pilot 	= _westPilot;
+		_crew 	= _westCrew;
+		if (_type == 1) then {_unit = _westUnit;} else {_unit = _westPara};
+	};
+	
+	//Helicopter//;
+	dropheli1 = _heli createVehicle (getMarkerPos _spawn);
+//	dropheli1 allowdamage false;
+//	if (true) then {dropheli1 animateDoor ['door_R', 1]; dropheli1 animateDoor ['door_L', 1];};
+	_grouppilots = createGroup _side;
+	_groupveh = createGroup _side;
+	_pilot createUnit [getMarkerPos _spawn, _grouppilots, "this moveindriver dropheli1", 0.6, "corporal"]; 
+	_crew createUnit [getMarkerPos _spawn, _grouppilots, "this moveingunner dropheli1", 0.6, "corporal"];
+	_grouppilots allowFleeing 0;
+//	{_x allowdamage false} foreach units _grouppilots;
+
+	//Soldiers//;
+	_airgroup1 = createGroup _side;
+	if (true) then {
+		if (_type == 1) then {   //LAND ON GROUND//;
+			while {ammount < _force} do {  //SPAWN SOLDIERS//;
+				_unit createUnit [getMarkerPos _spawn, _airgroup1, "this moveincargo dropheli1", 0.6, "corporal"];
+				ammount = ammount + 1;
+				sleep 0.01;
+			};
+			
+			//Waypoints//;
+			sleep 0.5;
+			dropheli1 flyinheight 100;
+			_disposeheli = [[0,0,0]];
+			_waypoint1 = _grouppilots addWaypoint [getmarkerpos _Drop, 10];
+			_waypoint1 setWayPointBehaviour "CARELESS";
+			_waypoint1 setWayPointSpeed "NORMAL";
+			_waypoint1 setWayPointType "MOVE";
+			_waypoint1 setWayPointCombatMode "WHITE";
+			waituntil {dropheli1 distance dropland1 < 150};
+			_waypoint2 = _grouppilots addWaypoint [getpos dropland1, 3];
+			_waypoint2 setWayPointBehaviour "CARELESS";
+			_waypoint2 setWayPointSpeed "NORMAL";
+			_waypoint2 setWayPointType "UNLOAD";
+			_waypoint2 setWayPointCombatMode "WHITE";
+			_waypoint2 setWaypointStatements ["true", "dropheli1 land 'dropland1'"];
+			waitUntil {(getPosATL dropheli1) select 2 > 20};
+			waitUntil {(getPosATL dropheli1) select 2 > 1};
+			{unassignVehicle _x} forEach units _airgroup1;
+			sleep 15;
+			dropheli1 flyinheight 300;
+			_waypoint3 = _grouppilots addWaypoint [_disposeheli select 0, 100];
+			_waypoint3 setWayPointBehaviour "CARELESS";
+			_waypoint3 setWayPointSpeed "FULL";
+			_waypoint3 setWayPointType "MOVE";
+			_waypoint3 setWayPointCombatMode "RED";
+			sleep 50;
+			//Delete//;
+			deleteVehicle dropland1;
+			deleteVehicle dropheli1;
+			{deleteVehicle _x} forEach units _grouppilots;
+			if (true) exitwith {
+				instance = 0;
+			};
+		};
+		
+		if (_type == 2) then {		//AIRDROP//;
+			while {ammount < _force} do {  //SPAWN SOLDIERS//;
+				"B_soldier_PG_F" createUnit [getMarkerPos _spawn, _airgroup1, "this moveincargo dropheli1", 0.6, "corporal"];
+				ammount = ammount + 1;
+				sleep 0.01;
+			};
+			sleep 0.5;
+
+			_disposeheli = [[0,0,0]];
+			trigger1 = createTrigger["Dropzone1",(getmarkerPos _drop)];
+			trigger1 setTriggerArea[50,500,0,false];
+			trigger1 setTriggerActivation["NONE","PRESENT",true];
+			trigger1 setTriggerStatements["Dropheli1 in thislist", "dropzoneact = 1"]; 
+			_waypoint1 = _grouppilots addWaypoint [getmarkerpos _Drop, 10];
+			_waypoint1 setWayPointBehaviour "CARELESS";
+			_waypoint1 setWayPointSpeed "NORMAL";
+			_waypoint1 setWayPointType "MOVE";
+			_waypoint1 setWayPointCombatMode "WHITE";
+			dropheli1 flyinheight 500;
+			{_x allowdamage false} foreach units _airgroup1;
+			waituntil {dropheli1 distance dropland1 < 520};
+			{_x action ["EJECT",dropheli1],unassignVehicle _x} Foreach units _airgroup1;
+			sleep 4;
+			{_x allowdamage true} foreach units _airgroup1;
+			_waypoint3 = _grouppilots addWaypoint [_disposeheli select 0, 100];
+			_waypoint3 setWayPointBehaviour "CARELESS";
+			_waypoint3 setWayPointSpeed "FULL";
+			_waypoint3 setWayPointType "MOVE";
+			_waypoint3 setWayPointCombatMode "RED";
+
+			sleep 30;
+			//Delete//;
+			deleteVehicle dropland1;
+			deleteVehicle dropheli1;
+			{deleteVehicle _x} forEach units _grouppilots;
+			if (true) exitwith {
+				instance = 0;
+			};
+		};
+		if (_type == 3) then {		//VEHICLES GROUND//;
+			_disposeheli = [[0,0,0]];
+			if (true) then {dropheli1 animateDoor ['door_R', 0]; dropheli1 animateDoor ['door_L', 0];};
+
+			dropveh = _veh createVehicle (getMarkerPos _spawn);
+			dropveh allowdamage false;
+			dropveh attachTo [dropheli1,[0,2,-5]];
+			sleep 1;
+			dropveh allowdamage true;
+
+			dropheli1 flyinheight 100;
+			if (_crew == 1) then {
+				"B_crew_F" createUnit [getMarkerPos _spawn, _groupveh, "this moveindriver dropveh", 0.6, "corporal"]; 
+				"B_crew_F" createUnit [getMarkerPos _spawn, _groupveh, "this moveingunner dropveh", 0.6, "corporal"];
+			};
+
+			_waypoint1 = _grouppilots addWaypoint [getmarkerpos _Drop, 5];
+			_waypoint1 setWayPointBehaviour "CARELESS";
+			_waypoint1 setWayPointSpeed "NORMAL";
+			_waypoint1 setWayPointType "MOVE";
+			_waypoint1 setWayPointCombatMode "WHITE";
+			_waypoint2 = _grouppilots addWaypoint [getmarkerpos _Drop, 2];
+			_waypoint2 setWayPointBehaviour "CARELESS";
+			_waypoint2 setWayPointSpeed "NORMAL";
+			_waypoint2 setWayPointType "MOVE";
+			_waypoint2 setWayPointCombatMode "WHITE";
+			_waypoint2 setWaypointStatements ["true", "dropheli1 flyinheight 7"];
+			waitUntil {(getPosATL dropheli1) select 2 > 30};
+			waitUntil {(getPosATL dropheli1) select 2 < 12};
+			detach dropveh;
+			sleep 2;
+			dropheli1 flyinheight 300;
+			_waypoint3 = _grouppilots addWaypoint [_disposeheli select 0, 100];
+			_waypoint3 setWayPointBehaviour "CARELESS";
+			_waypoint3 setWayPointSpeed "FULL";
+			_waypoint3 setWayPointType "MOVE";
+			_waypoint3 setWayPointCombatMode "RED";
+			
+			sleep 30;
+			//Delete//;
+			deleteVehicle dropland1;
+			deleteVehicle dropheli1;
+			{deleteVehicle _x} forEach units _grouppilots;
+			if (true) exitwith {
+				instance = 0;
+			};
+		};
+		if (_type == 4) then {		//VEHICLE PARACHUTE//;
+			_disposeheli = [[0,0,0]];
+			if (true) then {dropheli1 animateDoor ['door_R', 0]; dropheli1 animateDoor ['door_L', 0];};
+
+			dropveh = _veh createVehicle (getMarkerPos _spawn);
+			dropveh allowdamage false;
+			dropveh attachTo [dropheli1,[0,2,-5]];
+			sleep 1;
+			dropveh allowdamage true;
+
+			if (_crew == 1) then {
+				"B_crew_F" createUnit [getMarkerPos _spawn, _groupveh, "this moveindriver dropveh", 0.6, "corporal"]; 
+				"B_crew_F" createUnit [getMarkerPos _spawn, _groupveh, "this moveingunner dropveh", 0.6, "corporal"];
+			};
+
+			dropheli1 flyinheight 350;
+			_waypoint1 = _grouppilots addWaypoint [getmarkerpos _Drop, 5];
+			_waypoint1 setWayPointBehaviour "CARELESS";
+			_waypoint1 setWayPointSpeed "NORMAL";
+			_waypoint1 setWayPointType "MOVE";
+			_waypoint1 setWayPointCombatMode "WHITE";
+			_waypoint2 = _grouppilots addWaypoint [getmarkerpos _Drop, 2];
+			dropheli1 flyinheight 350;
+			dropveh allowdamage false;
+			waituntil {dropheli1 distance dropland1 < 370};
+			detach dropveh;
+			sleep 4.5;
+			_pilot = dropveh;
+			_chute = createVehicle ["B_Parachute_02_F", [100, 100, 200], [], 0, 'FLY'];
+			_chute setPos [position _pilot select 0, position _pilot select 1, (position _pilot select 2) - 50];
+			dropveh attachTo [_chute, [0, 0, -1.3]];
+			_waypoint3 = _grouppilots addWaypoint [_disposeheli select 0, 100];
+			_waypoint3 setWayPointBehaviour "CARELESS";
+			_waypoint3 setWayPointSpeed "FULL";
+			_waypoint3 setWayPointType "MOVE";
+			_waypoint3 setWayPointCombatMode "RED";
+			sleep 30;
+			//Delete//;
+			deleteVehicle dropland1;
+			deleteVehicle dropheli1;
+			{deleteVehicle _x} forEach units _grouppilots;
+			waitUntil {position dropveh select 2 < 0.5 || isNull _chute};
+			detach dropveh;
+			dropveh setPos [position dropveh select 0, position dropveh select 1, 0];
+			dropveh allowdamage true;
+			if (true) exitwith {
+				instance = 0;
+			};
+		};
+	};	
+};
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////;
+if (_side == east) then {   //SPAWN OPFOR//;
+	//Helicopter//;
+	dropheli1 = _eastHeli createVehicle (getMarkerPos _spawn);
+	dropheli1 allowdamage false;
+	_grouppilots = createGroup east;
+	_groupveh = createGroup east;
+	"O_helicrew_F" createUnit [getMarkerPos _spawn, _grouppilots, "this moveindriver dropheli1", 0.6, "corporal"]; 
+	_grouppilots allowFleeing 0;
+	{_x allowdamage false} foreach units _grouppilots;
+	//Soldiers//;
+	_airgroup1 = createGroup east;
+	if (true) then {
+		if (_type == 1) then {   //LAND ON GROUND//;
+			while {ammount < _force} do {  //SPAWN SOLDIERS//;
+				"O_soldier_PG_F" createUnit [getMarkerPos _spawn, _airgroup1, "this moveincargo dropheli1", 0.6, "corporal"];
+				ammount = ammount + 1;
+				sleep 0.01;
+			};
+			//Waypoints//;
+			sleep 0.5;
+			_disposeheli = [[0,0,0]];
+			_waypoint1 = _grouppilots addWaypoint [getmarkerpos _Drop, 10];
+			_waypoint1 setWayPointBehaviour "CARELESS";
+			_waypoint1 setWayPointSpeed "NORMAL";
+			_waypoint1 setWayPointType "MOVE";
+			_waypoint1 setWayPointCombatMode "WHITE";
+
+			waituntil {dropheli1 distance dropland1 < 150};
+			_waypoint2 = _grouppilots addWaypoint [getpos dropland1, 3];
+			_waypoint2 setWayPointBehaviour "CARELESS";
+			_waypoint2 setWayPointSpeed "NORMAL";
+			_waypoint2 setWayPointType "UNLOAD";
+			_waypoint2 setWayPointCombatMode "WHITE";
+			_waypoint2 setWaypointStatements ["true", "dropheli1 land 'dropland1'"];
+			waitUntil {(getPosATL dropheli1) select 2 > 20};
+			waitUntil {(getPosATL dropheli1) select 2 > 1};
+			{unassignVehicle _x} forEach units _airgroup1;
+			sleep 15;
+			dropheli1 flyinheight 300;
+			_waypoint3 = _grouppilots addWaypoint [_disposeheli select 0, 100];
+			_waypoint3 setWayPointBehaviour "CARELESS";
+			_waypoint3 setWayPointSpeed "FULL";
+			_waypoint3 setWayPointType "MOVE";
+			_waypoint3 setWayPointCombatMode "RED";
+			sleep 50;
+			//Delete//;
+			deleteVehicle dropland1;
+			deleteVehicle dropheli1;
+			{deleteVehicle _x} forEach units _grouppilots;
+			if (true) exitwith {
+				instance = 0;
+			};
+		};
+		if (_type == 2) then {		//AIRDROP//;
+			while {ammount < _force} do {  //SPAWN SOLDIERS//;
+				"O_soldier_PG_F" createUnit [getMarkerPos _spawn, _airgroup1, "this moveincargo dropheli1", 0.6, "corporal"];
+				ammount = ammount + 1;
+				sleep 0.01;
+			};
+			sleep 0.5;
+
+			_disposeheli = [[0,0,0]];
+			trigger1 = createTrigger["Dropzone1",(getmarkerPos _drop)];
+			trigger1 setTriggerArea[50,500,0,false];
+			trigger1 setTriggerActivation["NONE","PRESENT",true];
+			trigger1 setTriggerStatements["Dropheli1 in thislist", "dropzoneact = 1"]; 
+			_waypoint1 = _grouppilots addWaypoint [getmarkerpos _Drop, 10];
+			_waypoint1 setWayPointBehaviour "CARELESS";
+			_waypoint1 setWayPointSpeed "NORMAL";
+			_waypoint1 setWayPointType "MOVE";
+			_waypoint1 setWayPointCombatMode "WHITE";
+			dropheli1 flyinheight 500;
+			{_x allowdamage false} foreach units _airgroup1;
+			waituntil {dropheli1 distance dropland1 < 550};
+			{_x action ["EJECT",dropheli1],unassignVehicle _x} Foreach units _airgroup1;
+			sleep 4;
+			{_x allowdamage true} foreach units _airgroup1;
+			_waypoint3 = _grouppilots addWaypoint [_disposeheli select 0, 100];
+			_waypoint3 setWayPointBehaviour "CARELESS";
+			_waypoint3 setWayPointSpeed "FULL";
+			_waypoint3 setWayPointType "MOVE";
+			_waypoint3 setWayPointCombatMode "RED";
+
+			sleep 30;
+			//Delete//;
+			deleteVehicle dropland1;
+			deleteVehicle dropheli1;
+			{deleteVehicle _x} forEach units _grouppilots;
+			if (true) exitwith {
+				instance = 0;
+			};
+		};
+		if (_type == 3) then {		//VEHICLES GROUND//;
+			_disposeheli = [[0,0,0]];
+			if (true) then {dropheli1 animateDoor ['door_R', 0]; dropheli1 animateDoor ['door_L', 0];};
+			dropveh = _veh createVehicle (getMarkerPos _spawn);
+			dropveh allowdamage false;
+			dropveh attachTo [dropheli1,[0,2,-5]];
+			sleep 1;
+			dropveh allowdamage true;
+			dropheli1 flyinheight 100;
+			if (_crew == 1) then {
+				"O_crew_F" createUnit [getMarkerPos _spawn, _groupveh, "this moveindriver dropveh", 0.6, "corporal"]; 
+				"O_crew_F" createUnit [getMarkerPos _spawn, _groupveh, "this moveingunner dropveh", 0.6, "corporal"];
+			};
+
+			_waypoint1 = _grouppilots addWaypoint [getmarkerpos _Drop, 5];
+			_waypoint1 setWayPointBehaviour "CARELESS";
+			_waypoint1 setWayPointSpeed "NORMAL";
+			_waypoint1 setWayPointType "MOVE";
+			_waypoint1 setWayPointCombatMode "WHITE";
+			_waypoint2 = _grouppilots addWaypoint [getmarkerpos _Drop, 2];
+			_waypoint2 setWayPointBehaviour "CARELESS";
+			_waypoint2 setWayPointSpeed "NORMAL";
+			_waypoint2 setWayPointType "MOVE";
+			_waypoint2 setWayPointCombatMode "WHITE";
+			_waypoint2 setWaypointStatements ["true", "dropheli1 flyinheight 7"];
+			waitUntil {(getPosATL dropheli1) select 2 > 30};
+			waitUntil {(getPosATL dropheli1) select 2 < 12};
+			detach dropveh;
+			sleep 2;
+			dropheli1 flyinheight 300;
+			_waypoint3 = _grouppilots addWaypoint [_disposeheli select 0, 100];
+			_waypoint3 setWayPointBehaviour "CARELESS";
+			_waypoint3 setWayPointSpeed "FULL";
+			_waypoint3 setWayPointType "MOVE";
+			_waypoint3 setWayPointCombatMode "RED";
+			
+			sleep 30;
+			//Delete//;
+			deleteVehicle dropland1;
+			deleteVehicle dropheli1;
+			{deleteVehicle _x} forEach units _grouppilots;
+			if (true) exitwith {
+				instance = 0;
+			};
+		};
+		if (_type == 4) then {		//VEHICLE PARACHUTE//;
+			_disposeheli = [[0,0,0]];
+
+			dropveh = _veh createVehicle (getMarkerPos _spawn);
+			dropveh allowdamage false;
+			dropveh attachTo [dropheli1,[0,2,-5]];
+			sleep 1;
+			dropveh allowdamage true;
+
+			if (_crew == 1) then {
+				"O_crew_F" createUnit [getMarkerPos _spawn, _groupveh, "this moveindriver dropveh", 0.6, "corporal"]; 
+				"O_crew_F" createUnit [getMarkerPos _spawn, _groupveh, "this moveingunner dropveh", 0.6, "corporal"];
+			};
+
+			dropheli1 flyinheight 350;
+			_waypoint1 = _grouppilots addWaypoint [getmarkerpos _Drop, 5];
+			_waypoint1 setWayPointBehaviour "CARELESS";
+			_waypoint1 setWayPointSpeed "NORMAL";
+			_waypoint1 setWayPointType "MOVE";
+			_waypoint1 setWayPointCombatMode "WHITE";
+			_waypoint2 = _grouppilots addWaypoint [getmarkerpos _Drop, 2];
+			dropheli1 flyinheight 350;
+			dropveh allowdamage false;
+			waituntil {dropheli1 distance dropland1 < 370};
+			detach dropveh;
+			sleep 4.5;
+			_pilot = dropveh;
+			_chute = createVehicle ["O_Parachute_02_F", [100, 100, 200], [], 0, 'FLY'];
+			_chute setPos [position _pilot select 0, position _pilot select 1, (position _pilot select 2) - 50];
+			dropveh attachTo [_chute, [0, 0, -1.3]];
+			_waypoint3 = _grouppilots addWaypoint [_disposeheli select 0, 100];
+			_waypoint3 setWayPointBehaviour "CARELESS";
+			_waypoint3 setWayPointSpeed "FULL";
+			_waypoint3 setWayPointType "MOVE";
+			_waypoint3 setWayPointCombatMode "RED";
+			sleep 30;
+			//Delete//;
+			deleteVehicle dropland1;
+			deleteVehicle dropheli1;
+			{deleteVehicle _x} forEach units _grouppilots;
+			waitUntil {position dropveh select 2 < 0.5 || isNull _chute};
+			detach dropveh;
+			dropveh setPos [position dropveh select 0, position dropveh select 1, 0];
+			dropveh allowdamage true;
+			if (true) exitwith {
+				instance = 0;
+			};
+		};
+	};	
+};
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////;
+if (_side == independent) then {   //SPAWN INDEPENDENT//;
+	//Helicopter//;
+	dropheli1 = _indepHeli createVehicle (getMarkerPos _spawn);
+	dropheli1 allowdamage false;
+	_grouppilots = createGroup resistance;
+	_groupveh = createGroup resistance;
+	"I_helipilot_F" createUnit [getMarkerPos _spawn, _grouppilots, "this moveindriver dropheli1", 0.6, "corporal"]; 
+	_grouppilots allowFleeing 0;
+	{_x allowdamage false} foreach units _grouppilots;
+	//Soldiers//;
+	_airgroup1 = createGroup resistance;
+	if (true) then {
+		if (_type == 1) then {   //LAND ON GROUND//;
+			while {ammount < _force} do {  //SPAWN SOLDIERS//;
+				"I_soldier_F" createUnit [getMarkerPos _spawn, _airgroup1, "this moveincargo dropheli1; this addBackpack 'B_Parachute';", 0.6, "corporal"];
+				ammount = ammount + 1;
+				sleep 0.01;
+			};
+			//Waypoints//;
+			sleep 0.5;
+			_disposeheli = [[0,0,0]];
+			_waypoint1 = _grouppilots addWaypoint [getmarkerpos _Drop, 10];
+			_waypoint1 setWayPointBehaviour "CARELESS";
+			_waypoint1 setWayPointSpeed "NORMAL";
+			_waypoint1 setWayPointType "MOVE";
+			_waypoint1 setWayPointCombatMode "WHITE";
+
+			waituntil {dropheli1 distance dropland1 < 150};
+			_waypoint2 = _grouppilots addWaypoint [getpos dropland1, 3];
+			_waypoint2 setWayPointBehaviour "CARELESS";
+			_waypoint2 setWayPointSpeed "NORMAL";
+			_waypoint2 setWayPointType "UNLOAD";
+			_waypoint2 setWayPointCombatMode "WHITE";
+			_waypoint2 setWaypointStatements ["true", "dropheli1 land 'dropland1'"];
+			waitUntil {(getPosATL dropheli1) select 2 > 20};
+			waitUntil {(getPosATL dropheli1) select 2 > 1};
+			{unassignVehicle _x} forEach units _airgroup1;
+			sleep 15;
+			dropheli1 flyinheight 300;
+			_waypoint3 = _grouppilots addWaypoint [_disposeheli select 0, 100];
+			_waypoint3 setWayPointBehaviour "CARELESS";
+			_waypoint3 setWayPointSpeed "FULL";
+			_waypoint3 setWayPointType "MOVE";
+			_waypoint3 setWayPointCombatMode "RED";
+			sleep 50;
+			//Delete//;
+			deleteVehicle dropland1;
+			deleteVehicle dropheli1;
+			{deleteVehicle _x} forEach units _grouppilots;
+			if (true) exitwith {
+				instance = 0;
+			};
+		};
+		if (_type == 2) then {		//AIRDROP//;
+			while {ammount < _force} do {  //SPAWN SOLDIERS//;
+				"I_soldier_F" createUnit [getMarkerPos _spawn, _airgroup1, "this moveincargo dropheli1; this addBackpack 'B_Parachute';", 0.6, "corporal"];
+				ammount = ammount + 1;
+				sleep 0.01;
+			};
+			sleep 0.5;
+			_disposeheli = [[0,0,0]];
+
+			trigger1 = createTrigger["Dropzone1",(getmarkerPos _drop)];
+			trigger1 setTriggerArea[50,500,0,false];
+			trigger1 setTriggerActivation["NONE","PRESENT",true];
+			trigger1 setTriggerStatements["Dropheli1 in thislist", "dropzoneact = 1"]; 
+			_waypoint1 = _grouppilots addWaypoint [getmarkerpos _Drop, 10];
+			_waypoint1 setWayPointBehaviour "CARELESS";
+			_waypoint1 setWayPointSpeed "NORMAL";
+			_waypoint1 setWayPointType "MOVE";
+			_waypoint1 setWayPointCombatMode "WHITE";
+			dropheli1 flyinheight 500;
+			{_x allowdamage false} foreach units _airgroup1;
+			waituntil {dropheli1 distance dropland1 < 550};
+			{_x action ["EJECT",dropheli1],unassignVehicle _x} Foreach units _airgroup1;
+			sleep 4;
+			{_x allowdamage true} foreach units _airgroup1;
+			_waypoint3 = _grouppilots addWaypoint [_disposeheli select 0, 100];
+			_waypoint3 setWayPointBehaviour "CARELESS";
+			_waypoint3 setWayPointSpeed "FULL";
+			_waypoint3 setWayPointType "MOVE";
+			_waypoint3 setWayPointCombatMode "RED";
+
+			sleep 30;
+			//Delete//;
+			deleteVehicle dropland1;
+			deleteVehicle dropheli1;
+			{deleteVehicle _x} forEach units _grouppilots;
+			if (true) exitwith {
+				instance = 0;
+			};
+		};
+		if (_type == 3) then {		//VEHICLES GROUND//;
+			_disposeheli = [[0,0,0]];
+			if (true) then {dropheli1 animateDoor ['door_R', 0]; dropheli1 animateDoor ['door_L', 0];};
+			dropveh = _veh createVehicle (getMarkerPos _spawn);
+			dropveh allowdamage false;
+			dropveh attachTo [dropheli1,[0,2,-5]];
+			sleep 1;
+			dropveh allowdamage true;
+
+			dropheli1 flyinheight 100;
+			if (_crew == 1) then {
+				"O_crew_F" createUnit [getMarkerPos _spawn, _groupveh, "this moveindriver dropveh", 0.6, "corporal"]; 
+				"O_crew_F" createUnit [getMarkerPos _spawn, _groupveh, "this moveingunner dropveh", 0.6, "corporal"];
+			};
+			_waypoint1 = _grouppilots addWaypoint [getmarkerpos _Drop, 5];
+			_waypoint1 setWayPointBehaviour "CARELESS";
+			_waypoint1 setWayPointSpeed "NORMAL";
+			_waypoint1 setWayPointType "MOVE";
+			_waypoint1 setWayPointCombatMode "WHITE";
+			_waypoint2 = _grouppilots addWaypoint [getmarkerpos _Drop, 2];
+			_waypoint2 setWayPointBehaviour "CARELESS";
+			_waypoint2 setWayPointSpeed "NORMAL";
+			_waypoint2 setWayPointType "MOVE";
+			_waypoint2 setWayPointCombatMode "WHITE";
+			_waypoint2 setWaypointStatements ["true", "dropheli1 flyinheight 7"];
+			waitUntil {(getPosATL dropheli1) select 2 > 30};
+			waitUntil {(getPosATL dropheli1) select 2 < 12};
+			detach dropveh;
+			sleep 2;
+			dropheli1 flyinheight 300;
+			_waypoint3 = _grouppilots addWaypoint [_disposeheli select 0, 100];
+			_waypoint3 setWayPointBehaviour "CARELESS";
+			_waypoint3 setWayPointSpeed "FULL";
+			_waypoint3 setWayPointType "MOVE";
+			_waypoint3 setWayPointCombatMode "RED";
+			
+			sleep 30;
+			//Delete//;
+			deleteVehicle dropland1;
+			deleteVehicle dropheli1;
+			{deleteVehicle _x} forEach units _grouppilots;
+			if (true) exitwith {
+				instance = 0;
+			};
+		};
+		if (_type == 4) then {		//VEHICLE PARACHUTE//;
+			_disposeheli = [[0,0,0]];
+			dropveh = _veh createVehicle (getMarkerPos _spawn);
+			dropveh allowdamage false;
+			dropveh attachTo [dropheli1,[0,2,-5]];
+			sleep 3;
+			dropveh allowdamage true;
+
+			if (_crew == 1) then {
+				"O_crew_F" createUnit [getMarkerPos _spawn, _groupveh, "this moveindriver dropveh", 0.6, "corporal"]; 
+				"O_crew_F" createUnit [getMarkerPos _spawn, _groupveh, "this moveingunner dropveh", 0.6, "corporal"];
+			};
+
+			dropheli1 flyinheight 350;
+			_waypoint1 = _grouppilots addWaypoint [getmarkerpos _Drop, 5];
+			_waypoint1 setWayPointBehaviour "CARELESS";
+			_waypoint1 setWayPointSpeed "NORMAL";
+			_waypoint1 setWayPointType "MOVE";
+			_waypoint1 setWayPointCombatMode "WHITE";
+			_waypoint2 = _grouppilots addWaypoint [getmarkerpos _Drop, 2];
+			dropheli1 flyinheight 350;
+			dropveh allowdamage false;
+			waituntil {dropheli1 distance dropland1 < 370};
+			detach dropveh;
+			sleep 4.5;
+			_pilot = dropveh;
+			_chute = createVehicle ["O_Parachute_02_F", [100, 100, 200], [], 0, 'FLY'];
+			_chute setPos [position _pilot select 0, position _pilot select 1, (position _pilot select 2) - 50];
+			dropveh attachTo [_chute, [0, 0, -1.3]];
+			_waypoint3 = _grouppilots addWaypoint [_disposeheli select 0, 100];
+			_waypoint3 setWayPointBehaviour "CARELESS";
+			_waypoint3 setWayPointSpeed "FULL";
+			_waypoint3 setWayPointType "MOVE";
+			_waypoint3 setWayPointCombatMode "RED";
+			sleep 30;
+			//Delete//;
+			deleteVehicle dropland1;
+			deleteVehicle dropheli1;
+			{deleteVehicle _x} forEach units _grouppilots;
+			waitUntil {position dropveh select 2 < 0.5 || isNull _chute};
+			detach dropveh;
+			dropveh setPos [position dropveh select 0, position dropveh select 1, 0];
+			dropveh allowdamage true;
+			if (true) exitwith {
+				instance = 0;
+			};
+		};
+	};	
+};
