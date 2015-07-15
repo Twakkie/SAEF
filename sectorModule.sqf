@@ -1,11 +1,11 @@
 //===================================================================================================================
 // This script is called to place a sector module on the map for the players to assualt/ defend.
 // How to use: Execute this in an execution/init box of a item or trigger
-//              null = [mrkPos,sectorSize,side1,side2,defaultOwner,costAir,costInfantry,costPlayers,
+//              null = [sectorMrk,sectorSize,side1,side2,defaultOwner,costAir,costInfantry,costPlayers,
 //                      costTracked,costWater,costWheeled,designation,name,onOwnerChange,ownerLimit,
 //                      scoreReward,taskDescription,taskOwner,taskTitle] execVM "sectorModule.sqf";
 // Variable Explination:
-//              mrkPos          = is the position of the marker where the sector must be spawned. **Critical Variable**
+//              sectorMrk       = name of the marker where the sector must be spawned. **Critical Variable**
 //              trgSize         = Size of the secor that should be spawned. **Optional, Default: 500**
 //              side1 & side 2  = is the sides that will contend for the sector. **Optional, Default: east**
 //              defaultOwner    = is the default owner the sector. "-1"= None, "0"= West, "1" = East, "2"= Indi **Optional, String, Default: "-1"**
@@ -29,7 +29,9 @@
 //Exit if we are not the server 
 if !( isServer ) exitWith {}; 
 
-private ["_pos","_trgSize","_side1","_side2","_defaultOwner"];
+private ["_pos","_trgSize","_side1","_side2","_defaultOwner","_costAir","_costInfantry",
+		"_costPlayers","_costTracked","_costWater","_costWheeled","_designation",
+		"_name","_onOwnerChange","_ownerLimit","_scoreReward","_taskDescription","_taskOwner","_taskTitle"];
 
 //Default setting,  which are optional
 _pos            = _this select 0;
