@@ -29,9 +29,11 @@
 //Exit if we are not the server 
 if !( isServer ) exitWith {}; 
 
+private ["_pos","_trgSize","_side1","_side2","_defaultOwner"];
+
 //Default setting,  which are optional
 _pos            = _this select 0;
-_pos 			= _pos call BIS_fnc_position;
+_pos 			= _pos call BIS_fnc_position; 
 _trgSize        = [_this,1,500,[[],objNull,""],2] call BIS_fnc_param;   //A size for the trigger 
 _side1          = [_this,2,east,[[],objNull,""],1] call BIS_fnc_param;
 _side2          = [_this,3,west,[[],objNull,""],1] call BIS_fnc_param;
