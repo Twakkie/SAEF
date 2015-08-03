@@ -48,12 +48,12 @@ instance = 1;
 private ["_spawn", "_drop", "_type", "_force", "_side", "_veh", "_crew"];
 
 // User inputs
-_spawn 	= [_this,0,null,[[],objNull,""],1] call BIS_fnc_param;		// (1) First setting is spawnpoint in the form of a marker
-_drop 	= [_this,1,null,[[],objNull,""],1] call BIS_fnc_param;		// (2) Second setting is insertion point in the form of a marker
+_spawn 	= _this select 0;		// (1) First setting is spawnpoint in the form of a marker
+_drop 	= _this select 1;		// (2) Second setting is insertion point in the form of a marker
 _type 	= [_this,2,1,[[],objNull,""],1] call BIS_fnc_param;			// (3) Third setting is type as seen above ( 1 = Soldiers Ground ||  2 = Soldiers Parachute || 3 = Vehicle Ground || 4 = Vehicle / Ammobox Parachute )
 _force 	= [_this,3,8,[[],objNull,""],1] call BIS_fnc_param;			// (4) Fourth setting is the ammount of enemies to be dropped ( 0 - 8 )
 _side 	= [_this,4,west,[[],objNull,""],1] call BIS_fnc_param;		// (5) Fifth setting is the side of the reinforcement ( west || east || Indep )
-_veh 	= [_this,5,null,[[],objNull,""],1] call BIS_fnc_param;		// (6) Sixth setting is the type of vehicle to be dropped off ( put the object name in "" )
+_veh 	= [_this,5,"B_MRAP_01_hmg_F",[[],objNull,""],1] call BIS_fnc_param;		// (6) Sixth setting is the type of vehicle to be dropped off ( put the object name in "" )
 _crew 	= [_this,6,0,[[],objNull,""],1] call BIS_fnc_param;			// (7) seventh setting toggles crew in the vehicle ( 1 = ON || 0 = OFF )
 
 // Basic Units
@@ -103,7 +103,7 @@ FNC_heliWaypointMove = {			// Function to create the first waypoint for movement
 	private ["_waypoint","_groupPilots"];
 	_groupPilots 	= _this select 0;
 	
-	_waypoint = _groupPilots addWaypoint [getmarkerpos landZone, 10];
+	_waypoint = _groupPilots addWaypoint [getMarkerPos _drop, 10];
 	_waypoint setWayPointBehaviour "CARELESS";
 	_waypoint setWayPointSpeed "NORMAL";
 	_waypoint setWayPointType "MOVE";
@@ -111,55 +111,83 @@ FNC_heliWaypointMove = {			// Function to create the first waypoint for movement
 };
 
 //-CREATE HELI LAND WAYPOINT-//
-FNC_heliWaypointLand = {			// Function to create waypoint to land/drop off cargo
-	
-	private ["_waypoint","_groupPilots","_dropLandPad","_reinfType","_heli"];
+FNC_heliWaypointDrop = {			// Function to create waypoint to land/drop off cargo
+
+	private ["_waypoint","_groupPilots","_reinfType"];
 	_groupPilots	= _this select 0;
-	_dropLandPad	= _this select 1;
-	_reinfType 		= _this select 2;
-	_heli			= _this select 3;
+	_reinfType 		= _this select 1;
 	
-	_waypoint = _groupPilots addWaypoint [getpos _dropLandPad, 10];
+	_waypoint = _groupPilots addWaypoint [getpos landZone, 10];
 	_waypoint setWayPointBehaviour "CARELESS";
 	_waypoint setWayPointSpeed "NORMAL";
 	_waypoint setWayPointCombatMode "WHITE";
+	
+	switch (_reinfType) do {
+		case 1: 
+			{
+			_waypoint setWayPointType "UNLOAD";
+			_waypoint setWaypointStatements ["true", "transportHeli land 'landZone'"];	
+			};
+		case 2: 
+			{
+			_waypoint setWayPointType "MOVE";
+			{unassignVehicle _x; 
+			_x action ["GetOut",vehicle _x];
+			_x setDir getDir transportHeli;
+			_x setVelocity [0,20,-20];
+			sleep 0.75;
+			} forEach units _groupSoldiers;
+			};
+		default { hint "default" };
+	};
+	/*
 	if (_reinfType == 1) then {
 		_waypoint setWayPointType "UNLOAD";
-		_waypoint setWaypointStatements ["true", "_heli land '_dropLandPad'"];
+		_waypoint setWaypointStatements ["true", "transportHeli land 'landZone'"];
 	} else {
 		_waypoint setWayPointType "MOVE";
-		_waypoint setWaypointStatements ["true", "_heli flyinheight 7"];
-	};
+		_waypoint setWaypointStatements ["true", "transportHeli flyinheight 7"];
+	 }; */
 };
 
 //-CREATE HELI DELETE WAYPOINT-//
 FNC_heliWaypointDelete = {			// Function to create waypoint where heli is deleted
 
-	private ["_waypoint","_groupPilots","_heli"];
+	private ["_waypoint","_groupPilots"];
 	_groupPilots	= _this select 0;
-	_heli			= _this select 1;
 	
-	_waypoint = _groupPilots addWaypoint [_heli select 0, 100];
+	_waypoint = _groupPilots addWaypoint [getMarkerPos _spawn, 100];
 	_waypoint setWayPointBehaviour "CARELESS";
 	_waypoint setWayPointSpeed "FULL";
 	_waypoint setWayPointType "MOVE";
 	_waypoint setWayPointCombatMode "RED";
 };
 
+//-CREATE HELI DELETE WAYPOINT-//
+FNC_attachVeh = {
+	private ["_waypoint","_groupPilots"];
+	
+};
+
 //-----CLEANUP UNIT/HELI-----//
 FNC_cleanup = {						// Delete heli and crew
 
-	private ["_dropPoint","_heli","_groupPilots","_reinfType","_dropVeh","_chute"];
-	_dropPoint		= _this select 0;
-	_heli			= _this select 1;
-	_groupPilots 	= _this select 2;
-	_reinfType		= _this select 3;
-	_dropVeh		= _this select 4;
-	_chute			= _this select 5;
+	private ["_groupPilots","_reinfType"];
+	_groupPilots 	= _this select 0;
+	_reinfType		= _this select 1;
 	
-	deleteVehicle _dropPoint;
-	deleteVehicle _heli;
+	
+	deleteVehicle landZone;
+	deleteVehicle transportHeli;
 	{deleteVehicle _x} forEach units _groupPilots;
+};
+
+FNC_cleanup2 = {
+	
+	private ["_dropVeh","_chute"];
+	_dropVeh		= [_this,null,1,[[],objNull,""],1] call BIS_fnc_param;
+	_chute			= [_this,null,1,[[],objNull,""],1] call BIS_fnc_param;
+	
 	if (_reinfType == 4) then {
 		waitUntil {position _dropVeh select 2 < 0.5 || isNull _chute};
 		detach _dropVeh;
@@ -174,16 +202,13 @@ FNC_cleanup = {						// Delete heli and crew
 //------SPAWN VEHICLE------//
 FNC_createVeh = {					// Create reinforcement vehicle
 	
-	private ["_veh","_spawn","_heli"];
+	private ["_veh","_spawn"];
 	_veh	= _this select 0;
 	_spawn	= _this select 1;
-	_heli 	= _this select 2;
 	
 	_dropVeh = _veh createVehicle (getMarkerPos _spawn);
 	_dropVeh allowdamage false;
-	_dropVeh attachTo [_heli,[0,2,-5]];
-	sleep 1;
-	_dropVeh allowdamage true;
+	
 };
 //----------------------------//
 
@@ -223,8 +248,9 @@ _crew 		= _westCrew;
 _vehCrew	= _westVehCrew;
 
 
+
 //CREATE HELICOPTER & CREW//
-transportHeli = _heli createVehicle (getMarkerPos _spawn);
+transportHeli = createVehicle [_heli, getMarkerPos _spawn, [], 0, "FLY"]; 
 _groupPilots = createGroup _side;
 _groupveh = createGroup _side;
 _pilot createUnit [getMarkerPos _spawn, _groupPilots, "this moveInDriver transportHeli;", 0.6, "corporal"];
@@ -249,50 +275,46 @@ if (_type == 1) then {
 	[_groupPilots] call FNC_heliWaypointMove;
 	waituntil {transportHeli distance landZone < 150};
 	
-	[_groupPilots,landZone,_type,transportHeli] call FNC_heliWaypointLand;	
+	[_groupPilots,_type] call FNC_heliWaypointDrop;	
 	waitUntil {(getPosATL transportHeli) select 2 > 1};
 	
 	{unassignVehicle _x} forEach units _groupSoldiers;
-	sleep 15;
+	waitUntil{{_x in transportHeli} count (units _groupSoldiers) == 0;};
 	
-	transportHeli flyinheight 300;
-	[_groupPilots,transportHeli] call FNC_heliWaypointDelete;
-	sleep 30;
+	[_groupPilots] call FNC_heliWaypointDelete;
 	
 	//Cleanup//;
-	_type call FNC_cleanup;
+	transportHeli flyinheight 100;
+	waitUntil{transportHeli distance (getMarkerPos _spawn) < 200};
+	[_groupPilots,_type] call FNC_cleanup; 
 };
 
 //AIRDROP//
-if (_type == 2) then {		
+ if (_type == 2) then {		
 	//Create Soldiers
 	_unit = _westPara;
-	[_ammount,_force,_unit,_spawn,_groupSoldiers,_heli] call FNC_spawnSoldiers;
+	[_ammount,_force,_unit,_spawn,_groupSoldiers,transportHeli] call FNC_spawnSoldiers;
 	sleep 0.5;
 
 	//Waypoints//;
-	paraTrigger = createTrigger["Dropzone1",(getmarkerPos _drop)];
-	paraTrigger setTriggerArea[50,500,0,false];
-	paraTrigger setTriggerActivation["NONE","PRESENT",true];
-	paraTrigger setTriggerStatements["transportHeli in thislist", "_dropzoneact = 1"]; 
+	transportHeli flyinheight 400;
+	[_groupPilots] call FNC_heliWaypointMove;
+	waituntil {transportHeli distance (getMarkerPos _drop) < 450};
 	
-	transportHeli flyinheight 500;
-	[_groupPilots,landZone] call FNC_heliWaypointMove;
-	_waypoint2 = _groupPilots addWaypoint [getmarkerpos _drop, 2];
-	waituntil {transportHeli distance landZone < 520};
-	{_x action ["EJECT",transportHeli],unassignVehicle _x} Foreach units _groupSoldiers;
-	sleep 4;
-	[_groupPilots,transportHeli] call FNC_heliWaypointDelete;
-	sleep 30;
-
+	[_groupPilots,_type] call FNC_heliWaypointDrop;
+	
+	[_groupPilots] call FNC_heliWaypointDelete;
+	
 	//Delete//;
-	_type call FNC_cleanup;
+	transportHeli flyinheight 100;
+	waitUntil{transportHeli distance (getMarkerPos _spawn) < 200};
+	[_groupPilots,_type] call FNC_cleanup;
 };
 
 //VEHICLES GROUND//
 if (_type == 3) then {		
 
-	[_veh,_spawn,transportHeli] call FNC_createVeh;
+	[_veh,_spawn] call FNC_createVeh;
 
 	transportHeli flyinheight 100;
 	if (_crew == 1) then {
@@ -301,19 +323,22 @@ if (_type == 3) then {
 	};
 	
 	//Waypoints//;
-	[_groupPilots,landZone] call FNC_heliWaypointMove;
-	[_groupPilots,landZone,_type,transportHeli] call FNC_heliWaypointLand;
+	[_groupPilots] call FNC_heliWaypointMove;
+	[_groupPilots,_type] call FNC_heliWaypointDrop;
 	waitUntil {(getPosATL transportHeli) select 2 < 12};
 	detach _dropVeh;
 	sleep 2;
 	transportHeli flyinheight 300;
-	[_groupPilots,transportHeli] call FNC_heliWaypointDelete;
+	[_groupPilots] call FNC_heliWaypointDelete;
 	sleep 30;
 	
 	//Delete//;
-	_type call FNC_cleanup;
+	transportHeli flyinheight 100;
+	waitUntil{transportHeli distance (getMarkerPos _spawn) < 200};
+	[_groupPilots,_type] call FNC_cleanup;
 };
 
+/*
 //VEHICLE PARACHUTE//
 if (_type == 4) then {		
 
@@ -343,4 +368,4 @@ if (_type == 4) then {
 	
 	//Delete//;
 	_type call FNC_cleanup;
-};
+}; */
