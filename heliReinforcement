@@ -1,58 +1,50 @@
-////////////////////////////////////////////////////////////////////
-// heliReinforcement script based on the AiLift script by AAmdahl //
-////////////////////////////////////////////////////////////////////
-//					Author: Colgate aka Twakkie 				  //
-////////////////////////////////////////////////////////////////////
-// 							Version: 1  						  //
-////////////////////////////////////////////////////////////////////
+/*-------------------------------------------------------------------------------------------------------------------/
+Author: 	Colgate aka Twakkie 	
+Description:	This script allows the mission creator to call up a fast and low resource intesive heli reinforcement
+		script while allowing different types of reinforcement/supplies to be called in.
+Version: 	1.0
+
+Original: 	heliReinforcement script based on the AiLift script by AAmdahl http://www.armaholic.com/page.php?id=25566					 						  
+/-------------------------------------------------------------------------------------------------------------------*/
+
+/*--HOW TO USE-------------------------------------------------------------------------------------------------------/
+
+~In Editor:
+Place two markers in the editor. The first being the heli spawnpoint, in this instance helispawn1. The second will be 
+the heli dropoff point, in this instance helidrop1.
+
+~How to Call:
+The bare minimum needed to be executed is the heli spawn point and the heli drop off point ex:
+["helispawn1", "helidrop1"] execVM "heliReinforcement.sqf";
+This will spawn a blufor heli with 8 units in cargo to be deployed at the drop off marker.
+
+The script allows further customization by adjusting the following variables:
+(1) First variable is heli spawnpoint in the form of a marker
+(2) Second variable is heli drop off point in the form of a marker
+(3) Third variable is type of reinforcement to drop ( 1 = Soldiers Ground ||  2 = Soldiers Parachute || 3 = Vehicle Ground || 4 = Vehicle / Ammobox Parachute )
+(4) Fourth variable is the ammount of units to be dropped ( 0 - 8 )
+(5) Fifth variable is the side of the reinforcement ( west = Blufor || east = Opfor || Indep = Indedpendent )
+(6) Sixth variable is the type of vehicle to be dropped off ( put the object name in "" )
+(7) seventh variable toggles crew in the vehicle ( 1 = ON || 0 = OFF )
+
+Using all these variables together, the command should look like this:
+["helispawn1", "helidrop1", 3, 0, west, "B_Quadbike_01_F", 0] execVM "heliReinforcement.sqf";
+    
+/-------------------------------------------------------------------------------------------------------------------*/
 
 
+//////////////////////////////
+//---SETTINGS---------------//
+//////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Execute the script using this line and modify it to suit your settings:
-// ["helispawn1", "helidrop1", 3, 0, 1, "Box_East_AmmoVeh_F", 0] execVM "ailift.sqf";
-//
-// To run it from a trigger use this:
-// if (true) then {["helispawn1", "helidrop1", 3, 0, 1, "Box_East_AmmoVeh_F", 0] execVM "ailift.sqf"};
-//----------------------------------------------------------------//
-//
-//; Settings are divided by commas
-//; (1) First setting is spawnpoint in the form of a marker
-//; (2) Second setting is insertion point in the form of a marker
-//; (3) Third setting is type as seen above ( 1 = Soldiers Ground ||  2 = Soldiers Parachute || 3 = Vehicle Ground || 4 = Vehicle / Ammobox Parachute )
-//; (4) Fourth setting is the ammount of enemies to be dropped ( 0 - 8 )
-//; (5) Fifth setting is the side of the reinforcement ( 1 = Blufor || 2 = Opfor || 3 = Indedpendent )
-//; (6) Sixth setting is the type of vehicle to be dropped off ( put the object name in "" )
-//; (7) seventh setting toggles crew in the vehicle ( 1 = ON || 0 = OFF )
-//
-//
-//								 ~~~HOW TO USE~~~																							   
-//;Place two markers in the editor, in this instance helispawn1 will be the spawnpoint														   
-//;The spawnpoint should be a open area so he heli can take off.																			   
-//;the other marker; helidrop1, is where the helicopter will insert the units																   																									
-//;You can change your settings as explained above.																							   
-//;Execute the script from wherever you want, can be either a trigger or from another script, or something else.							   
-//;To select which type of object/vehicle to be lifted, replace the sixth setting with the classname of the vehicle, put it INSIDE the ""      
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-//////////////////////;
-//DO NOT EDIT BELOW //;
-//////////////////////;
-
-/* if (instance == 1) exitWith {
-	hint format["Only run one instance of AiLift at a time"];
-}; */
-instance = 1;
- 
-params ["_spawn", 						// (1) First setting is spawnpoint in the form of a marker
-		"_drop",						// (2) Second setting is insertion point in the form of a marker
-		["_type",1],					// (3) Third setting is type as seen above ( 1 = Soldiers Ground ||  2 = Soldiers Parachute || 3 = Vehicle Ground || 4 = Vehicle / Ammobox Parachute )
-		["_force",8],					// (4) Fourth setting is the ammount of enemies to be dropped ( 0 - 8 )
-		["_side", west],				// (5) Fifth setting is the side of the reinforcement ( west || east || Indep )
-		["_veh", "B_Quadbike_01_F"],	// (6) Sixth setting is the type of vehicle to be dropped off ( put the object name in "" )
-		["_crew",0]];					// (7) seventh setting toggles crew in the vehicle ( 1 = ON || 0 = OFF ) 
-
+//Call Up Varaibles
+params ["_spawn", 				// (1) First setting is spawnpoint in the form of a marker
+	"_drop",					// (2) Second setting is insertion point in the form of a marker
+	["_type",1],				// (3) Third setting is type as seen above ( 1 = Soldiers Ground ||  2 = Soldiers Parachute || 3 = Vehicle Ground || 4 = Vehicle / Ammobox Parachute )
+	["_force",8],				// (4) Fourth setting is the ammount of enemies to be dropped ( 0 - 8 )
+	["_side", west],			// (5) Fifth setting is the side of the reinforcement ( west || east || Indep )
+	["_veh", "B_Quadbike_01_F"],// (6) Sixth setting is the type of vehicle to be dropped off ( put the object name in "" )
+	["_crew",0]];				// (7) seventh setting toggles crew in the vehicle ( 1 = ON || 0 = OFF ) 
 
 // Basic Units
 _westHeli 		= "b_heli_Transport_01_F";
@@ -66,16 +58,14 @@ _inepHeli 		= "I_Heli_Transport_02_F";
 
 // Other Variables
 _ammount = 0;
-_dropzoneact = 0;
 landZone = "Land_HelipadEmpty_F" createVehicle (getmarkerpos _drop);
-_disposeheli = [[0,0,0]];
 
 
 //////////////////////////////
-//-------Functions----------//
+//---FUNCTIONS BEGIN--------//
 //////////////////////////////
 
-//------SPAWN SOLDIERS------//
+//SPAWN SOLDIER//
 FNC_spawnSoldiers = {				
 
 	private["_ammount","_force","_unit","_spawn","_groupSoldiers","_heli"];
@@ -94,8 +84,7 @@ FNC_spawnSoldiers = {
 	_ammount = 0;
 };
 
-
-//-CREATE HELI MOVE WAYPOINT-//
+//CREATE HELI MOVE WAYPOINT//
 FNC_heliWaypointMove = {			// Function to create the first waypoint for movement of the heli.
 	
 	private ["_waypoint","_groupPilots"];
@@ -108,7 +97,7 @@ FNC_heliWaypointMove = {			// Function to create the first waypoint for movement
 	_waypoint setWayPointCombatMode "WHITE";
 };
 
-//-CREATE HELI LAND WAYPOINT-//
+//CREATE HELI LAND/DROP-OFF WAYPOINT//
 FNC_heliWaypointDrop = {			// Function to create waypoint to land/drop off cargo
 
 	private ["_waypoint","_groupPilots","_reinfType"];
@@ -121,13 +110,13 @@ FNC_heliWaypointDrop = {			// Function to create waypoint to land/drop off cargo
 	_waypoint setWayPointCombatMode "WHITE";
 	
 	switch (_reinfType) do {
-		case 1: 
+		case 1: //Infantry Land
 		{
 			_waypoint setWayPointType "UNLOAD";
 			_waypoint setWaypointStatements ["true", "transportHeli land 'landZone'"];	
 		};
 		
-		case 2: 
+		case 2: //Infantry Para
 		{
 			_waypoint setWayPointType "MOVE";
 			{unassignVehicle _x; 
@@ -138,7 +127,7 @@ FNC_heliWaypointDrop = {			// Function to create waypoint to land/drop off cargo
 			} forEach units _groupSoldiers;
 		};
 		
-		case 3:
+		case 3: //Vehicle Drop-Off
 		{ 
 			transportHeli flyinheight 5;
 			_waypoint setWayPointType "MOVE";
@@ -147,7 +136,7 @@ FNC_heliWaypointDrop = {			// Function to create waypoint to land/drop off cargo
 			transportHeli flyinheight 150;
 		};
 		
-		case 4:
+		case 4: //Vehicle Para
 		{
 			transportHeli setSlingLoad objNull;		
 			chute = createVehicle ["B_Parachute_02_F", [100, 100, 200], [], 0, 'FLY'];
@@ -159,7 +148,7 @@ FNC_heliWaypointDrop = {			// Function to create waypoint to land/drop off cargo
 	};
 };
 
-//-CREATE HELI DELETE WAYPOINT-//
+//CREATE HELI DELETE WAYPOINT//
 FNC_heliWaypointDelete = {			// Function to create waypoint where heli is deleted
 
 	private ["_waypoint","_groupPilots"];
@@ -172,18 +161,16 @@ FNC_heliWaypointDelete = {			// Function to create waypoint where heli is delete
 	_waypoint setWayPointCombatMode "RED";
 };
 
-FNC_shuteDetach = {
-	
-	/*private ["_chute"];
-	_chute 	= _this select 0; */
+//DELETE SHUTE ON OBJECT//
+FNC_shuteDetach = {			// Function to delete the shute which was wattached to pbject
 
 	waitUntil {position dropVeh select 2 < 0.5 || isNull chute};
 	detach dropVeh;
 	dropVeh setPos [position dropVeh select 0, position dropVeh select 1, 0];
 };
 
-//-----CLEANUP UNIT/HELI-----//
-FNC_cleanup = {						// Delete heli and crew
+//CLEANUP UNITS/VEHICLES/OBJECTS//
+FNC_cleanup = {						// Delete heli, crew and other objects spawned into the mission
 
 	private ["_groupPilots","_reinfType"];
 	_groupPilots 	= _this select 0;
@@ -195,9 +182,7 @@ FNC_cleanup = {						// Delete heli and crew
 	{deleteVehicle _x} forEach units _groupPilots;
 };
 
-
-
-//------SPAWN VEHICLE------//
+//SPAWN VEHICLES//
 FNC_createVeh = {					// Create reinforcement vehicle
 	
 	private ["_veh","_spawn","_crew"];
@@ -214,11 +199,13 @@ FNC_createVeh = {					// Create reinforcement vehicle
 	};
 	
 };
-//----------------------------//
+//--------------------------//
+//---FUNCTIONS END----------//
+//--------------------------//
 
 
 //////////////////////////////
-//-------Main Prog----------//
+//---MAIN PROGRAM BEGIN-----//
 //////////////////////////////
 
 //UNIT SELECTION//
@@ -361,3 +348,7 @@ switch (_type) do {
 
 	}; 
 };
+
+//--------------------------//
+//---MAIN PROGRAM END-------//
+//--------------------------//
