@@ -29,6 +29,32 @@
 //Exit if we are not the server 
 if !( isServer ) exitWith {}; 
 
+// Variable decleration and Default setting,  which are optional
+
+params	["_pos",							// Name of the marker where the sector must be spawned. **Critical Variable**
+		["_trgSize",500],					// Size of the secor that should be spawned. **Optional, Default: 500**
+		["_side1",east],					// is the sides that will contend for the sector. **Optional, Default: east**
+		["_side2",west],					// is the sides that will contend for the sector. **Optional, Default: west**
+		["_defaultOwner","-1"],				// is the default owner the sector. "-1"= None, "0"= West, "1" = East, "2"= Indi **Optional, String, Default: "-1"**
+		["_costAir","2"],					// The cost for the side if an air unit is destroyed. **Optional, Default: "2"**
+		["_costInfantry","1"],				// Cost per infantry unit killed for side. **Optional, Default: "1"**
+		["_costPlayers","2"],				// Cost per player killed for side. **Optional, Default:"2"**
+		["_costTracked","4"],				// Cost per tracked,ie tanks, unit killed. **Optional, Default:"4"**
+		["_costWater","0"],					// Cost per water type unit killed. **Optional, Default:"0"**
+		["_costWheeled","2"],				// Cost per wheeled unit, ie Light Armor, killed. **Optional, Default:"2"**
+		["_designation","A"],				// Designation for the sector. **Optional, Default:"A"**
+		["_name","Alpha"],					// Name for the sector. **Optional, Default:"Alpha"**
+		["_onOwnerChange",""],				// Script/trigger to activate when ownership change. **Optional, Default:""**
+		["_ownerLimit","0"],				// **Optional, Default:"0"**
+		["_scoreReward","0"],				// **Optional, Default:"0"**
+		["_taskDescription","Capture Alpha by eliminating the enemies"],		// Task description. **Optional, Default:"Capture Alpha by eliminating the enemies"**
+		["_taskOwner","3"],					// To whom must the task be assigned. **Optional, Default:"3"**
+		["_taskTitle","Capture Alpha"]];	// Title of task. **Optional, Default:"Capture Alpha"**
+
+// Find Marker Position
+_pos 			= _pos call BIS_fnc_position;
+
+/*
 private ["_pos","_trgSize","_side1","_side2","_defaultOwner","_costAir","_costInfantry",
 		"_costPlayers","_costTracked","_costWater","_costWheeled","_designation",
 		"_name","_onOwnerChange","_ownerLimit","_scoreReward","_taskDescription","_taskOwner","_taskTitle"];
@@ -54,6 +80,7 @@ _scoreReward    = [_this,15,"0",[[],objNull,""],1] call BIS_fnc_param;
 _taskDescription= [_this,16,"Capture Alpha by eliminating the enemies",[[],objNull,""],1] call BIS_fnc_param;
 _taskOwner      = [_this,17,"3",[[],objNull,""],1] call BIS_fnc_param;
 _taskTitle      = [_this,18,"Capture Alpha",[[],objNull,""],1] call BIS_fnc_param;
+*/
 
 //Create the sector logic 
 _logic = (createGroup sideLogic) createUnit ["ModuleSector_F",_pos,[],0,"NONE"]; 
