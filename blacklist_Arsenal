@@ -1,0 +1,94 @@
+////-------------------------------////
+////***Function to limit Arsenal***////
+////-------------------------------////
+
+//[ myBox, isGlobal ] call LARs_fnc_addAllVirtualCargo;
+
+LARs_fnc_addAllVirtualCargo = {
+ 
+    if !( params [
+        [ "_box", objNull, [ objNull ] ]
+    ] ) exitWith {};
+ 
+    _isGlobal = param[ 1, false, [ false ] ];
+    if ( _isGlobal ) exitWith {
+        [ _box ] remoteExec [ "LARs_fnc_addAllVirtualCargo", 0, true ];
+    };
+ 
+    _fnc_linkedItems = {
+        "
+            if ( isText( _x >> 'Item' ) ) then {
+                [ _box, getText( _x >> 'Item' ), false ] call BIS_fnc_addVirtualItemCargo;
+            };
+        "configClasses _this;
+    };
+ 
+ 
+    {
+        "
+            if ( getNumber( _x >> 'scope' ) isEqualTo 2 ) then {
+                _configName = configName _x;
+                _itemType = _configName call BIS_fnc_itemType;
+                if !( ( _itemType select 0 ) isEqualTo '' ) then {
+                    switch ( _itemType select 0 ) do {
+                        case 'Item' : {
+                            [ _box, _configName, false ] call BIS_fnc_addVirtualItemCargo;
+                        };
+                        case 'Weapon' : {
+                            if !( ( _itemType select 1 ) isEqualTo 'VehicleWeapon' ) then {
+                                if ( ( _configName call BIS_fnc_baseWeapon ) isEqualTo _configName ) then {
+                                    [ _box, _configName, false ] call BIS_fnc_addVirtualWeaponCargo;
+                                }else{
+                                    ( _x >> 'LinkedItems' ) call _fnc_linkedItems;
+                                };
+                            };
+                        };
+                        case 'Magazine' : {
+                            [ _box, _configName, false ] call BIS_fnc_addVirtualMagazineCargo;
+                        };
+                        case 'Mine' : {
+                            [ _box, _configName, false ] call BIS_fnc_addVirtualMagazineCargo;
+                        };
+                        case 'Equipment' : {
+                            if ( ( _itemType select 1 ) isEqualTo 'Backpack' ) then {
+                                [ _box, _configName, false ] call BIS_fnc_addVirtualBackpackCargo;
+                            }else{
+                                [ _box, _configName, false ] call BIS_fnc_addVirtualItemCargo;
+                            };
+                        };
+                    };
+                };
+            };
+        "configClasses _x;
+    }forEach [
+        ( configFile >> "CfgWeapons" ),
+        ( configFile >> "CfgMagazines" ),
+        ( configFile >> "CfgVehicles" ),
+        ( configFile >> "CfgGlasses" )
+    ];
+ 
+};
+////--------End Function-----------////
+
+
+
+////-------------------------------////
+////**********Begin Main***********////
+////-------------------------------////
+
+////***To have limited Arsenal:***////
+
+//*Init Field of Box:
+//null = [this] execVM "scripts\arsenalbox.sqf";
+
+_ammoBox = _this select 0;
+
+_blacklistWeapons = ["CAF_AK47","CAF_AK74","CAF_AK74GL","CAF_PKM","CAF_RPG7","CAF_RPK74","CAF_STRELA","CAF_SVD"];
+_blacklistMagazines = ["CAF_30RND_762x39_AK","CAF_30RND_545x39_AK","CAF_100RND_762x54_PKM","AT - CAF_PG7V","HE - CAF_OG7","CAF_75RND_545x39_RPK","CAF_AA_ROCKET","CAF_10RND_762X54_SVD"];
+
+["AmmoboxInit",[_ammoBox,false]] call BIS_fnc_arsenal;
+
+[_ammoBox,true] call LARs_fnc_addAllVirtualCargo;
+
+[_ammoBox,_blacklistWeapons,false] spawn BIS_fnc_removeVirtualWeaponCargo; // removes weapons from the virtualArsenal of the object myAmmoBox
+[_ammoBox,_blacklistMagazines,false] spawn BIS_fnc_removeVirtualMagazineCargo; // removes ammotypes from the virtualArsenal of the object myAmmoBox
